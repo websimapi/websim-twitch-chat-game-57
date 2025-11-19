@@ -76,6 +76,21 @@ export class LiveViewRenderer {
         }, { passive: false });
         
         // Camera rotation via middle mouse drag
+        this.container.addEventListener('mousedown', (e) => {
+            if (e.button === 1) { // middle mouse
+                e.preventDefault();
+                this.isMiddleDragging = true;
+                this.lastDragX = e.clientX;
+                this.lastDragY = e.clientY;
+            }
+        });
+
+        window.addEventListener('mouseup', (e) => {
+            if (e.button === 1) {
+                this.isMiddleDragging = false;
+            }
+        });
+
         this.container.addEventListener('mousemove', (e) => {
             if (!this.isMiddleDragging) return;
             e.preventDefault();
@@ -104,6 +119,7 @@ export class LiveViewRenderer {
 
     updateState(newState) {
         this.state = newState;
+        this.mapDataChanged = true;
     }
 
     renderLoop() {
@@ -133,6 +149,12 @@ export class LiveViewRenderer {
             this.mockGame.map.heightGrid = mapChunk.heightGrid;
         } else {
             this.mockGame.map.heightGrid = Array(chunkHeight).fill(0).map(() => Array(chunkWidth).fill(0));
+        }
+
+        // Signal terrain renderer to update vertices if map data changed
+        if (this.mapDataChanged) {
+            this.mockGame.map.needs3DUpdate = true;
+            this.mapDataChanged = false;
         }
 
         const originX = mapChunk.origin.x;
